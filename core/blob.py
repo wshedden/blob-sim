@@ -23,15 +23,27 @@ class Blob:
         self.state = "Idle"
         self.conversation_partner = None
         self.conversation_timer = 0
-        self.last_conversed_with = None
+        self.last_conversed_with = 0# --- Personality Traits (0.0–1.0 floats) ---
+        self.sociability = round(random.uniform(0.0, 1.0), 2)
+        self.territorial = round(random.uniform(0.0, 1.0), 2)
+        self.loyalty = round(random.uniform(0.0, 1.0), 2)
+        self.boldness = round(random.uniform(0.0, 1.0), 2)
+
+        # --- Personality Colour Bias (for territory blending) ---
+        self.colour_bias = tuple(
+            min(255, int(c + random.randint(-20, 20))) for c in self.color
+        )
+        
         self.conversation_lines = []
+                
+                
 
     def markov_decision(self):
         r = random.random()
         if self.markov_state == "Move":
             self.markov_state = "Move" if r < 0.6 else "Stay"
         else:
-            self.markov_state = "Stay" if r < 0.7 else "Move"
+            self.markov_state = "Stay" if r < 0.7  else "Move"
 
     def get_nearby_blobs(self, blobs, radius=3):
         return [

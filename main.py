@@ -8,7 +8,7 @@ from core.constants import (
 )
 from core.grid import hex_center, hex_corners
 from core.blob import Blob
-from ui.panels import draw_decision_panel, draw_decision_detail_panel
+from ui.panels import draw_decision_panel, draw_personality_panel
 
 def main():
     pygame.init()
@@ -52,7 +52,7 @@ def main():
             blob.draw_conversation(screen)
 
         draw_decision_panel(screen, blobs)
-        draw_decision_detail_panel(screen, blobs)
+        draw_personality_panel(screen, blobs)
 
         pygame.display.flip()
 

@@ -62,21 +62,32 @@ def draw_decision_panel(surface, blobs):
         y += spacing
 
 
-def draw_decision_detail_panel(surface, blobs):
+def draw_personality_panel(surface, blobs):
     """
-    Draw a second panel showing path details for each blob.
+    Draws the right-hand panel showing each blob's personality traits.
     """
-    font = pygame.font.SysFont(None, 20)
-    panel_rect = pygame.Rect(GRID_PIXEL_WIDTH + 50 + PANEL_WIDTH, 0, PANEL_WIDTH, WINDOW_HEIGHT)
+    from core.constants import PANEL_WIDTH, GRID_PIXEL_WIDTH, MARGIN, WINDOW_HEIGHT, DETAIL_PANEL_BG, TEXT_COLOR
+
+    panel_rect = pygame.Rect(GRID_PIXEL_WIDTH + MARGIN + PANEL_WIDTH, 0, PANEL_WIDTH, WINDOW_HEIGHT)
     pygame.draw.rect(surface, DETAIL_PANEL_BG, panel_rect)
 
+    font = pygame.font.SysFont(None, 20)
     x = panel_rect.x + 10
     y = 20
+
     for i, blob in enumerate(blobs):
-        detail = f"Path: {blob.path}"
-        lines = wrap_text(f"Blob {i+1}: {detail}", font, PANEL_WIDTH - 20)
-        for line in lines:
-            rendered = font.render(line, True, TEXT_COLOR)
-            surface.blit(rendered, (x, y))
-            y += rendered.get_height() + 2
+        name_text = font.render(f"Blob {i+1}", True, TEXT_COLOR)
+        surface.blit(name_text, (x, y))
+        y += name_text.get_height() + 2
+
+        for trait_name, value in [
+            ("Sociability", blob.sociability),
+            ("Territorial", blob.territorial),
+            ("Loyalty", blob.loyalty),
+            ("Boldness", blob.boldness),
+        ]:
+            trait_text = font.render(f"- {trait_name}: {value:.2f}", True, TEXT_COLOR)
+            surface.blit(trait_text, (x, y))
+            y += trait_text.get_height() + 1
+
         y += 10
