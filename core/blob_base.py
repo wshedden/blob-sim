@@ -3,7 +3,6 @@ import uuid
 from pygame.math import Vector2
 from core.grid import hex_center
 
-
 class Blob:
     def __init__(self, col, row):
         self.current_cell = (col, row)
@@ -14,7 +13,6 @@ class Blob:
         self.color = (random.randint(50, 255), random.randint(50, 255), random.randint(50, 255))
         self.colour_bias = tuple(min(255, int(c + random.randint(-20, 20))) for c in self.color)
 
-        # Identity & social state
         self.id = str(uuid.uuid4())[:6]
         self.markov_state = "Move"
         self.state = "Idle"
@@ -26,18 +24,15 @@ class Blob:
         self.last_conversed_with = None
         self.conversation_lines = []
 
-        # Personality
-        self.sociability = round(random.uniform(0.0, 1.0), 2)
+        self.sociability = round(random.uniform(0.3, 1.0), 2)
         self.territorial = round(random.uniform(0.0, 1.0), 2)
-        self.loyalty = round(random.uniform(0.0, 1.0), 2)
+        self.loyalty = round(random.uniform(0.3, 1.0), 2)
         self.boldness = round(random.uniform(0.0, 1.0), 2)
 
-        # Colony state
         self.colony = None
         self.wants_colony = False
 
-
-# --- Method Binding ---
+# Bind external methods
 import core.blob_behavior as blob_behavior
 import core.blob_draw as blob_draw
 

@@ -25,7 +25,6 @@ def wants_colony_with(self, other):
         other.loyalty > 0.3
     )
 
-
 def decide_path(self, blobs, occupied_cells):
     self.markov_decision()
 
@@ -84,8 +83,7 @@ def update(self, blobs, occupied_cells):
                     and other.last_conversed_with != self
                     and self.convo_cooldown == 0
                     and other.convo_cooldown == 0
-               ):
-                    # Prevent repeated chats within colony
+                ):
                     if self.colony and self.colony is other.colony:
                         if random.random() > 0.05:
                             continue
@@ -126,7 +124,7 @@ def update(self, blobs, occupied_cells):
 
     start_pos = Vector2(hex_center(*self.current_cell))
     target_pos = Vector2(hex_center(*next_cell))
-    self.progress += 1 / 60  # MOVE_DURATION assumed
+    self.progress += 1 / 60
 
     if self.progress >= 1:
         overshoot = self.progress - 1

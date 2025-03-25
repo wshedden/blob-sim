@@ -11,10 +11,32 @@ from core.blob_base import Blob
 from core.colony import Colony
 from ui.panels import draw_decision_panel, draw_personality_panel
 
-# Global colony state
+
+# Reset button rectangle
+RESET_BUTTON = pygame.Rect(10, 10, 100, 30)
+
+# Global state
+blobs = []
 colonies = []
-tile_owner = {}   # (col, row) → colony_id
-tile_colour = {}  # (col, row) → RGB
+tile_owner = {}
+tile_colour = {}
+
+
+def new_session():
+    global blobs, colonies, tile_owner, tile_colour
+
+    blobs = []
+    taken_cells = set()
+    for _ in range(5):
+        col = random.randint(0, GRID_COLS - 1)
+        row = random.randint(0, GRID_ROWS - 1)
+        if (col, row) not in taken_cells:
+            blobs.append(Blob(col, row))
+            taken_cells.add((col, row))
+
+    colonies = []
+    tile_owner = {}
+    tile_colour = {}
 
 
 def main():
@@ -22,37 +44,31 @@ def main():
     screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
     pygame.display.set_caption("Blob Simulation with Colonies")
     clock = pygame.time.Clock()
+    pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)  
+    new_session()
 
-    # Create initial blobs
-    blobs = []
-    taken_cells = set()
-    while len(blobs) < 5:
-        col = random.randint(0, GRID_COLS - 1)
-        row = random.randint(0, GRID_ROWS - 1)
-        if (col, row) not in taken_cells:
-            blobs.append(Blob(col, row))
-            taken_cells.add((col, row))
-
-    # Main loop
     running = True
     while running:
         clock.tick(FPS)
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            elif event.type == pygame.MOUSEBUTTONDOWN:
+                if RESET_BUTTON.collidepoint(event.pos):
+                    new_session()
 
         occupied_cells = {blob.current_cell for blob in blobs}
 
         for blob in blobs:
             blob.update(blobs, occupied_cells)
 
-            # Claim territory if in a colony
             if blob.colony and blob.current_cell not in blob.colony.territory:
                 blob.colony.claim(blob.current_cell)
                 tile_owner[blob.current_cell] = blob.colony.id
                 tile_colour[blob.current_cell] = blob.colony.colour
 
-        # Drawing
+        # Draw everything
         screen.fill(BG_COLOR)
 
         for col in range(GRID_COLS):
@@ -71,6 +87,12 @@ def main():
 
         draw_decision_panel(screen, blobs)
         draw_personality_panel(screen, blobs)
+
+        # Draw Reset Button LAST so it's on top
+        pygame.draw.rect(screen, (200, 50, 50), RESET_BUTTON)
+        font = pygame.font.SysFont(None, 20)
+        text = font.render("RESET", True, (255, 255, 255))
+        screen.blit(text, (RESET_BUTTON.x + 15, RESET_BUTTON.y + 5))
 
         pygame.display.flip()
 
