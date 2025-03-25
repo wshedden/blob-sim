@@ -23,10 +23,16 @@ class Blob:
         if self.markov_state == "Move":
             self.markov_state = "Move" if r < 0.6 else "Stay"
         else:
-            self.markov_state = "Stay" if r < 0.7 else "Move"
+            self.markov_state = "Stay" if r < 0.99 else "Move"
 
     def decide_path(self):
         self.markov_decision()
+
+        if self.markov_state == "Stay":
+            self.path = []
+            self.decision = "Staying"
+            return
+
         possible = [
             (c, r) for c in range(GRID_COLS) for r in range(GRID_ROWS)
             if (c, r) != self.current_cell
