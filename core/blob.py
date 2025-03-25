@@ -1,10 +1,12 @@
 import random
+import uuid
 import pygame
 from pygame.math import Vector2
 
 from core.constants import MOVE_DURATION, EYE_COLOR, GRID_COLS, GRID_ROWS, TARGET_OUTLINE_WIDTH
 from core.grid import hex_center, get_hex_neighbors
 from core.pathfinding import a_star_hex, hex_distance
+from core.colony import Colony
 from ui.drawing import draw_arrow
 
 
@@ -23,27 +25,35 @@ class Blob:
         self.state = "Idle"
         self.conversation_partner = None
         self.conversation_timer = 0
-        self.last_conversed_with = 0# --- Personality Traits (0.0–1.0 floats) ---
+        self.last_conversed_with = None
+        self.conversation_lines = []
+
+        # --- Personality ---
         self.sociability = round(random.uniform(0.0, 1.0), 2)
         self.territorial = round(random.uniform(0.0, 1.0), 2)
         self.loyalty = round(random.uniform(0.0, 1.0), 2)
         self.boldness = round(random.uniform(0.0, 1.0), 2)
+        self.colour_bias = tuple(min(255, int(c + random.randint(-20, 20))) for c in self.color)
 
-        # --- Personality Colour Bias (for territory blending) ---
-        self.colour_bias = tuple(
-            min(255, int(c + random.randint(-20, 20))) for c in self.color
+        # --- Colony ---
+        self.id = str(uuid.uuid4())[:6]
+        self.colony = None
+        self.wants_colony = False
+
+    def wants_colony_with(self, other):
+        return (
+            self.colony is None and
+            other.colony is None and
+            self.sociability > 0.5 and
+            other.loyalty > 0.5
         )
-        
-        self.conversation_lines = []
-                
-                
 
     def markov_decision(self):
         r = random.random()
         if self.markov_state == "Move":
             self.markov_state = "Move" if r < 0.6 else "Stay"
         else:
-            self.markov_state = "Stay" if r < 0.7  else "Move"
+            self.markov_state = "Stay" if r < 0.7 else "Move"
 
     def get_nearby_blobs(self, blobs, radius=3):
         return [
@@ -63,6 +73,10 @@ class Blob:
             (c, r) for c in range(GRID_COLS) for r in range(GRID_ROWS)
             if (c, r) != self.current_cell and (c, r) not in occupied_cells
         ]
+
+        # If part of a colony, only move within its territory
+        if self.colony:
+            possible = [cell for cell in possible if cell in self.colony.territory]
 
         if not possible:
             self.path = []
@@ -89,6 +103,11 @@ class Blob:
                 self.conversation_lines = []
             return
 
+        # Colony claiming logic
+        if self.colony and self.current_cell not in self.colony.territory:
+            self.colony.claim(self.current_cell)
+
+        # Try to initiate a colony-forming conversation
         if self.state == "Idle" and not self.path:
             for other in blobs:
                 if other is self:
@@ -99,34 +118,30 @@ class Blob:
                         and other.conversation_partner is None
                         and other.last_conversed_with != self
                     ):
-                        self.state = "Talking"
-                        other.state = "Talking"
-
+                        self.state = other.state = "Talking"
                         self.conversation_partner = other
                         other.conversation_partner = self
-
-                        duration = random.randint(50, 90)
-                        self.conversation_timer = other.conversation_timer = duration
-
+                        self.conversation_timer = other.conversation_timer = random.randint(50, 90)
                         self.last_conversed_with = other
                         other.last_conversed_with = self
 
-                        initiator_lines = [
-                            "Hey there!",
-                            "What brings you here?",
-                            "You move well.",
-                            "Cool hex!"
-                        ]
-                        reply_lines = [
-                            "Hey!",
-                            "Just wandering.",
-                            "Thanks, you too!",
-                            "Haha thanks."
-                        ]
+                        if self.wants_colony_with(other):
+                            self.wants_colony = other.wants_colony = True
+                            colony = Colony(founder=self, colour=self.colour_bias)
+                            colony.add_member(other)
+                            self.colony = colony
+                            other.colony = colony
 
-                        self.conversation_lines = [(random.choice(initiator_lines), self.color)]
-                        other.conversation_lines = [(random.choice(reply_lines), other.color)]
-                        return
+                            self.conversation_lines = [("Let’s start a colony.", self.color)]
+                            other.conversation_lines = [("Yeah, I’m in.", other.color)]
+                        else:
+                            # Initiate brief conversation, then resume wandering
+                            self.conversation_lines = [("Ever think about teaming up?", self.color)]
+                            other.conversation_lines = [("Not really.", other.color)]
+
+                            # shorten conversation timer so they move quickly again
+                            self.conversation_timer = other.conversation_timer = 30  # half second
+
 
         if not self.path:
             self.decide_path(blobs, occupied_cells)
@@ -170,7 +185,7 @@ class Blob:
         if self.state != "Talking" or not self.conversation_lines or not self.conversation_partner:
             return
         if self is not min(self, self.conversation_partner, key=id):
-            return  # Only draw once per pair
+            return
 
         mid = (self.position + self.conversation_partner.position) / 2
         font = pygame.font.SysFont(None, 18)
