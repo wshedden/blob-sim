@@ -17,16 +17,14 @@ class Blob:
 
         self.color = (random.randint(50, 255), random.randint(50, 255), random.randint(50, 255))
 
-        # Movement / Decision
         self.markov_state = "Move"
         self.decision = "Idle"
 
-        # Talking system
         self.state = "Idle"
         self.conversation_partner = None
         self.conversation_timer = 0
         self.last_conversed_with = None
-        self.conversation_text = ""
+        self.conversation_lines = []
 
     def markov_decision(self):
         r = random.random()
@@ -49,7 +47,6 @@ class Blob:
             self.decision = "Staying"
             return
 
-        # Avoid occupied cells
         possible = [
             (c, r) for c in range(GRID_COLS) for r in range(GRID_ROWS)
             if (c, r) != self.current_cell and (c, r) not in occupied_cells
@@ -60,11 +57,9 @@ class Blob:
             self.decision = "No options"
             return
 
-        # Pick a target and find a path
         target = random.choice(possible)
         new_path = a_star_hex(self.current_cell, target)
 
-        # Remove invalid paths or blocked steps
         if len(new_path) > 1 and all(cell not in occupied_cells for cell in new_path[1:]):
             self.path = new_path[1:]
             self.decision = f"Target {target}"
@@ -73,16 +68,15 @@ class Blob:
             self.decision = "No valid path"
 
     def update(self, blobs, occupied_cells):
-        # Handle talking
         if self.state == "Talking":
             self.conversation_timer -= 1
             if self.conversation_timer <= 0:
                 self.state = "Idle"
                 self.conversation_partner = None
                 self.last_conversed_with = None
+                self.conversation_lines = []
             return
 
-        # Start conversation if adjacent and idle
         if self.state == "Idle" and not self.path:
             for other in blobs:
                 if other is self:
@@ -99,31 +93,36 @@ class Blob:
                         self.conversation_partner = other
                         other.conversation_partner = self
 
-                        duration = random.randint(60, 120)
+                        duration = random.randint(50, 90)
                         self.conversation_timer = other.conversation_timer = duration
 
                         self.last_conversed_with = other
                         other.last_conversed_with = self
 
-                        msg = random.choice([
-                            "Nice weather.",
-                            "Where are you headed?",
-                            "I like your colour.",
-                            "Do you ever stay still?"
-                        ])
-                        self.conversation_text = msg
-                        other.conversation_text = msg
+                        initiator_lines = [
+                            "Hey there!",
+                            "What brings you here?",
+                            "You move well.",
+                            "Cool hex!"
+                        ]
+                        reply_lines = [
+                            "Hey!",
+                            "Just wandering.",
+                            "Thanks, you too!",
+                            "Haha thanks."
+                        ]
+
+                        self.conversation_lines = [(random.choice(initiator_lines), self.color)]
+                        other.conversation_lines = [(random.choice(reply_lines), other.color)]
                         return
 
-        # Decide where to go
         if not self.path:
             self.decide_path(blobs, occupied_cells)
             return
 
-        # Step toward next cell
         next_cell = self.path[0]
         if next_cell in occupied_cells:
-            self.path = []  # abort path due to collision
+            self.path = []
             return
 
         start_pos = Vector2(hex_center(*self.current_cell))
@@ -156,11 +155,21 @@ class Blob:
             draw_arrow(surface, pos, target_center, self.color, TARGET_OUTLINE_WIDTH)
 
     def draw_conversation(self, surface):
-        if self.state != "Talking" or not self.conversation_text or not self.conversation_partner:
+        if self.state != "Talking" or not self.conversation_lines or not self.conversation_partner:
             return
+        if self is not min(self, self.conversation_partner, key=id):
+            return  # Only draw once per pair
+
         mid = (self.position + self.conversation_partner.position) / 2
         font = pygame.font.SysFont(None, 18)
-        text_surf = font.render(self.conversation_text, True, (255, 255, 255))
-        bubble_rect = text_surf.get_rect(center=(mid.x, mid.y - 25))
-        pygame.draw.rect(surface, (0, 0, 0), bubble_rect.inflate(8, 4))
-        surface.blit(text_surf, bubble_rect)
+
+        padding = 6
+        spacing = 5
+        y_offset = -30
+
+        for line, bg_color in self.conversation_lines + self.conversation_partner.conversation_lines:
+            text_surf = font.render(line, True, (255, 255, 255))
+            rect = text_surf.get_rect(center=(mid.x, mid.y + y_offset))
+            pygame.draw.rect(surface, bg_color, rect.inflate(padding * 2, padding))
+            surface.blit(text_surf, rect)
+            y_offset += rect.height + spacing
