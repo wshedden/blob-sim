@@ -27,6 +27,8 @@ class Blob:
         self.conversation_timer = 0
         self.last_conversed_with = None
         self.conversation_lines = []
+        self.convo_cooldown = 0  # frames to wait before next convo
+
 
         # --- Personality ---
         self.sociability = round(random.uniform(0.0, 1.0), 2)
@@ -94,6 +96,9 @@ class Blob:
             self.decision = "No valid path"
 
     def update(self, blobs, occupied_cells):
+        if self.convo_cooldown > 0:
+            self.convo_cooldown -= 1
+
         if self.state == "Talking":
             self.conversation_timer -= 1
             if self.conversation_timer <= 0:
@@ -131,6 +136,7 @@ class Blob:
                             colony.add_member(other)
                             self.colony = colony
                             other.colony = colony
+                            self.convo_cooldown = other.convo_cooldown = 180
 
                             self.conversation_lines = [("Let’s start a colony.", self.color)]
                             other.conversation_lines = [("Yeah, I’m in.", other.color)]
@@ -139,8 +145,9 @@ class Blob:
                             self.conversation_lines = [("Ever think about teaming up?", self.color)]
                             other.conversation_lines = [("Not really.", other.color)]
 
-                            # shorten conversation timer so they move quickly again
-                            self.conversation_timer = other.conversation_timer = 30  # half second
+                            self.conversation_timer = other.conversation_timer = 30
+                            self.convo_cooldown = other.convo_cooldown = 120  # 2 seconds before re-engaging
+
 
 
         if not self.path:
