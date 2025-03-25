@@ -21,9 +21,10 @@ def wants_colony_with(self, other):
     return (
         self.colony is None and
         other.colony is None and
-        self.sociability > 0.5 and
-        other.loyalty > 0.5
+        self.sociability > 0.3 and
+        other.loyalty > 0.3
     )
+
 
 def decide_path(self, blobs, occupied_cells):
     self.markov_decision()
