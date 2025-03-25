@@ -7,7 +7,7 @@ from core.constants import (
     GRID_COLS, GRID_ROWS, FPS, HEX_COLOR, GRID_LINE_COLOR
 )
 from core.grid import hex_center, hex_corners
-from core.blob import Blob
+from core.blob_base import Blob
 from core.colony import Colony
 from ui.panels import draw_decision_panel, draw_personality_panel
 
