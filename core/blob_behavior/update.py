@@ -48,6 +48,7 @@ def update(self, blobs, occupied_cells):
                         self.wants_colony = other.wants_colony = True
                         colony = Colony(founder=self, colour=self.colour_bias)
                         colony.add_member(other)
+                        colony.world_blobs = blobs  # Assign the global blob list to the colony
                         self.colony = colony
                         other.colony = colony
                         self.conversation_lines = [("Let’s start a colony.", self.color)]
