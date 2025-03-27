@@ -33,15 +33,38 @@ class Blob:
         self.wants_colony = False
 
 # Bind external methods
-import core.blob_behavior as blob_behavior
+from core.blob_behavior import (
+    markov_decision,
+    decide_path,
+    claim_tile,
+    wants_colony_with,
+    _colony_chat,
+    is_loyal,
+    is_bold,
+)
 import core.blob_draw as blob_draw
 
-Blob.update = blob_behavior.update
-Blob.decide_path = blob_behavior.decide_path
-Blob.get_nearby_blobs = blob_behavior.get_nearby_blobs
-Blob.markov_decision = blob_behavior.markov_decision
-Blob.wants_colony_with = blob_behavior.wants_colony_with
-Blob._colony_chat = blob_behavior._colony_chat
+Blob.markov_decision = markov_decision
+Blob.decide_path = decide_path
+Blob.claim_tile = claim_tile
+Blob.wants_colony_with = wants_colony_with
+Blob._colony_chat = _colony_chat
+Blob.is_loyal = is_loyal
+Blob.is_bold = is_bold
 
+# Bind draw and draw_conversation methods
 Blob.draw = blob_draw.draw
 Blob.draw_conversation = blob_draw.draw_conversation
+
+import core.blob_behavior as bh
+
+Blob.update = bh.update
+Blob.decide_path = bh.decide_path
+Blob.get_nearby_blobs = bh.get_nearby_blobs
+Blob.markov_decision = bh.markov_decision
+Blob.wants_colony_with = bh.wants_colony_with
+Blob._colony_chat = bh._colony_chat
+Blob.claim_tile = bh.claim_tile  # if you're using that too
+Blob.is_loyal = bh.is_loyal
+Blob.is_bold = bh.is_bold
+Blob.draw = blob_draw.draw

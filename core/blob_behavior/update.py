@@ -1,62 +1,9 @@
-import random
-from pygame.math import Vector2
-from core.grid import get_hex_neighbors, hex_center
-from core.pathfinding import a_star_hex, hex_distance
-from core.colony import Colony
-
-def markov_decision(self):
-    r = random.random()
-    if self.markov_state == "Move":
-        self.markov_state = "Move" if r < 0.6 else "Stay"
-    else:
-        self.markov_state = "Stay" if r < 0.7 else "Move"
-
-def get_nearby_blobs(self, blobs, radius=3):
-    return [
-        other for other in blobs
-        if other is not self and hex_distance(self.current_cell, other.current_cell) <= radius
-    ]
-
-def wants_colony_with(self, other):
-    return (
-        self.colony is None and
-        other.colony is None and
-        self.sociability > 0.3 and
-        other.loyalty > 0.3
-    )
-
-def decide_path(self, blobs, occupied_cells):
-    self.markov_decision()
-
-    if self.markov_state == "Stay":
-        self.path = []
-        self.decision = "Staying"
-        return
-
-    possible = [
-        (c, r) for c in range(15) for r in range(15)
-        if (c, r) != self.current_cell and (c, r) not in occupied_cells
-    ]
-
-    if self.colony:
-        possible = [cell for cell in possible if cell in self.colony.territory]
-
-    if not possible:
-        self.path = []
-        self.decision = "No options"
-        return
-
-    target = random.choice(possible)
-    new_path = a_star_hex(self.current_cell, target)
-
-    if len(new_path) > 1 and all(cell not in occupied_cells for cell in new_path[1:]):
-        self.path = new_path[1:]
-        self.decision = f"Target {target}"
-    else:
-        self.path = []
-        self.decision = "No valid path"
-
 def update(self, blobs, occupied_cells):
+    from core.grid import hex_center, get_hex_neighbors
+    from pygame.math import Vector2
+    import random
+    from core.colony import Colony
+
     if self.convo_cooldown > 0:
         self.convo_cooldown -= 1
 
@@ -141,13 +88,4 @@ def update(self, blobs, occupied_cells):
     else:
         self.position = start_pos.lerp(target_pos, self.progress)
 
-def _colony_chat(self, other):
-    self.state = other.state = "Talking"
-    self.conversation_partner = other
-    other.conversation_partner = self
-    self.last_conversed_with = other
-    other.last_conversed_with = self
-    self.conversation_timer = other.conversation_timer = 40
-    self.convo_cooldown = other.convo_cooldown = 180
-    self.conversation_lines = [("Glad we formed this colony.", self.color)]
-    other.conversation_lines = [("Yeah. Feels right.", other.color)]
+
